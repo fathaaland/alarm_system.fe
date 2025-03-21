@@ -5,22 +5,21 @@ export interface Household {
   members: User[];
   devices: Device[];
   logs: Log[];
-  current_state: string;
-  trigger_alarm: boolean;
-  createdAt: Date;
+  active: boolean;
+  alarm_triggerd: boolean;
 }
 
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
 }
 
 export interface Device {
   id: string;
   name: string;
   type: string;
-  createdAt: Date;
 }
 
 export interface Log {

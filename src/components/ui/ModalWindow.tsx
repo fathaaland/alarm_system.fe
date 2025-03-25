@@ -1,26 +1,32 @@
-import { CircleX } from "lucide-react";
+import { X } from "lucide-react";
 import * as React from "react";
 import { createPortal } from "react-dom";
 
-interface ModalTestProps {
+interface ModalProps {
   children: React.ReactNode;
   open: boolean;
   onClose: () => void;
 }
 
-export const ModalTest: React.FC<ModalTestProps> = ({
+export const ModalWindow: React.FC<ModalProps> = ({
   children,
   open,
   onClose,
 }) => {
   if (!open) return null;
   return createPortal(
-    <div style={{ position: "fixed", inset: 0, zIndex: 1000 }}>
+    <div
+      style={{
+        position: "relative",
+        inset: 0,
+        zIndex: 1000,
+        backgroundColor: "grey",
+        width: "500px",
+        height: "400px",
+      }}
+    >
+      <X onClick={onClose} />
       {children}
-      <button onClick={onClose}>
-        <CircleX />
-        Close
-      </button>
     </div>,
     document.body
   );

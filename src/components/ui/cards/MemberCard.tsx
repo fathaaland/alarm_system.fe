@@ -4,9 +4,10 @@ import { ModalWindow } from "../ModalWindow";
 
 interface MemberCradProps {
   member?: User;
+  role?: "admin" | "member";
 }
 
-export const MemberCard: React.FC<MemberCradProps> = ({ member }) => {
+export const MemberCard: React.FC<MemberCradProps> = ({ member, role }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   // ### implement handleRemoveMember, after success close modal
@@ -25,14 +26,17 @@ export const MemberCard: React.FC<MemberCradProps> = ({ member }) => {
         {/* email */}
         <p>{member?.email}</p>
         {/* remove member button */}
-        <button>Remove</button>
+        <button onClick={() => setIsOpen(true)}>Remove</button>
       </div>
 
       {/* confirm remove member modal */}
       <ModalWindow open={isOpen} onClose={() => setIsOpen(false)}>
         <h4>Remove {member?.firstName} from household</h4>
         <p>Are you sure? This action cannot be undone</p>
-        <button onClick={() => handleRemoveMember(member?.id)}>Remove</button>
+        {/* remove button only for admin */}
+        {role == "admin" ? (
+          <button onClick={() => handleRemoveMember(member?.id)}>Remove</button>
+        ) : null}
         <button onClick={() => setIsOpen(false)}>Cancel</button>
       </ModalWindow>
     </>

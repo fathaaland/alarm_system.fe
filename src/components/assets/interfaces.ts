@@ -1,21 +1,20 @@
 export interface Household {
   id: string;
   name: string;
-  password: string;
-  owner: User[];
+  ownerId: string;
+  members: string[];
+  devices: string[];
   logs: Log[];
-  createdAt: Date;
 }
 
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
+  password: string;
   email: string;
   role: string;
-  households: Household[];
   refreshToken: string;
-  createdAt: Date;
 }
 
 export interface Device {
@@ -23,8 +22,7 @@ export interface Device {
   name: string;
   type: string;
   active: boolean;
-  alarm_triggerd: Number;
-  createdAt: Date;
+  alarm_triggered: number;
 }
 
 export interface Log {
@@ -34,5 +32,6 @@ export interface Log {
   type: string;
   message: string;
   time: Date;
-  createdAt: Date;
 }
+
+// ### id to _id

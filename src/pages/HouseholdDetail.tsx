@@ -1,9 +1,9 @@
 import * as React from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Tabs } from "../components/ui";
 import { Household } from "../components/assets";
 import { mockHousehold } from "../components/assets/mockData";
+import { Tabs } from "../components/ui/tabs";
 
 const mockData: Household = mockHousehold;
 

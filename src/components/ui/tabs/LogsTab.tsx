@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Log } from "../assets";
-import { LogCard } from "./LogCard";
+import { Log } from "../../assets";
+import { LogCard } from "../cards/LogCard";
 
 interface TabsProps {
   logs?: Log[];

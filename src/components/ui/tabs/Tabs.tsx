@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Household } from "../assets";
+import { Household } from "../../assets";
 import { DevicesTab } from "./DevicesTab";
 import { MembersTab } from "./MembersTab";
 import { LogsTab } from "./LogsTab";

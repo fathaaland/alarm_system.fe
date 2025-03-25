@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { Dot } from "lucide-react";
-import { Household } from "../assets";
+import { Household } from "../../assets";
 
 interface HouseholdCardProps {
   household: Household;
@@ -24,7 +24,7 @@ export const HouseholdCard: React.FC<HouseholdCardProps> = ({ household }) => {
       </p>
       {/* household alarm active info */}
       <Dot />
-      <p>{household.current_state ? "Alarm Activated" : "Alarm Deactivated"}</p>
+      <p>{household.active ? "Alarm Activated" : "Alarm Deactivated"}</p>
       {/* household link to detail */}
       <Link to={`/household-detail/${household.id}`}>
         <div>

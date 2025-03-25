@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Log } from "../assets";
+import { Log } from "../../assets";
 
 interface LogCardProps {
   log?: Log;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Device } from "../assets";
+import { Device } from "../../assets";
 
 interface DeviceCardProps {
   device?: Device;

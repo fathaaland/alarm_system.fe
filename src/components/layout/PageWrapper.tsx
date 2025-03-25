@@ -7,10 +7,8 @@ import { Navbar } from "../ui";
 export const PageWrapper: React.FC = () => {
   const { pathname } = useLocation();
   const canRenderNavbar = pathname !== "/login" && pathname !== "/register";
-  React.useEffect(() => {
-    console.log("Outlet rendered");
-  }, []);
-  console.log("PageWrapper rendered");
+  React.useEffect(() => {}, []);
+
   return (
     <>
       {/* Navbar */}

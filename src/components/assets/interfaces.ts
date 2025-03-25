@@ -1,12 +1,10 @@
 export interface Household {
   id: string;
   name: string;
-  admin: User[];
-  members: User[];
-  devices: Device[];
+  password: string;
+  owner: User[];
   logs: Log[];
-  active: boolean;
-  alarm_triggerd: boolean;
+  createdAt: Date;
 }
 
 export interface User {
@@ -14,12 +12,19 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
+  role: string;
+  households: Household[];
+  refreshToken: string;
+  createdAt: Date;
 }
 
 export interface Device {
   id: string;
   name: string;
   type: string;
+  active: boolean;
+  alarm_triggerd: Number;
+  createdAt: Date;
 }
 
 export interface Log {
@@ -28,5 +33,6 @@ export interface Log {
   deviceId: string;
   type: string;
   message: string;
-  date: Date;
+  time: Date;
+  createdAt: Date;
 }

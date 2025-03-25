@@ -1,5 +1,9 @@
 import * as React from "react";
 
-export const UserProvider: React.FC = () => {
-  return <></>;
+interface UserProviderProps {
+  children: React.ReactNode;
+}
+
+export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
+  return <>{children}</>;
 };

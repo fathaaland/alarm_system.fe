@@ -13,7 +13,7 @@ export const LogsTab: React.FC<TabsProps> = ({ logs }) => {
       <h3>Logs</h3>
       {/* log cards */}
       {logs?.map((log) => (
-        <LogCard key={log.id} log={log} />
+        <LogCard key={log._id} log={log} />
       ))}
     </>
   );

@@ -1,14 +1,16 @@
 export interface Household {
-  id: string;
+  _id: string;
   name: string;
   ownerId: string;
   members: string[];
   devices: string[];
   logs: Log[];
+  createdAt: Date;
+  __v: number;
 }
 
 export interface User {
-  id: string;
+  _id: string;
   firstName: string;
   lastName: string;
   password: string;
@@ -18,7 +20,7 @@ export interface User {
 }
 
 export interface Device {
-  id: string;
+  _id: string;
   name: string;
   type: string;
   active: boolean;
@@ -26,7 +28,7 @@ export interface Device {
 }
 
 export interface Log {
-  id: string;
+  _id: string;
   userId: string;
   deviceId: string;
   type: string;

@@ -1,41 +1,34 @@
 import * as React from "react";
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Household } from "../components/assets";
-import { mockHousehold } from "../components/assets/mockData";
 import { Tabs } from "../components/ui/tabs";
-
-const mockData: Household = mockHousehold;
+import { useFetchData } from "../providers";
 
 export const HouseholdDetail: React.FC = () => {
   const { householdId } = useParams<{ householdId: string }>();
+  const { getData } = useFetchData();
 
-  // ### uncomment and use fetch when endpoint is done
-  /*  const {
-    data: householdData,
-    isError,
-    isPending,
-  } = useQuery({
-    queryKey: ["households", householdId],
-    queryFn: async () => {
-      if (!householdId) throw new Error("No householdId provided");
-      const response = await fetch(`/api/households/${householdId}`); // ### update to correct endpoint
-      if (!response.ok) throw new Error("Failed to fetch household data");
-      return (await response.json()) as Household;
-    },
-    enabled: !!householdId,
-  }); */
+  interface DtoOut {
+    success: boolean;
+    data: Household;
+  }
 
-  /* if (isPending) return <p>Loading...</p>;
-  if (isError) return <p>Error loading household data</p>; */ // ### manage what happens when loading fetching data and when an error occurs
+  const {
+    data: response,
+    isLoading,
+    error,
+  } = getData<DtoOut>("household", `/user/${householdId}`);
+
+  const household = response?.data;
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading household. Please try again.</div>;
 
   return (
     <>
-      {/* ### change mockData to householdData when endpoint is done */}
-      <h1>{mockData?.name}</h1>{" "}
+      <h1>{household?.name}</h1>{" "}
       <p>Manage your household devices, members, and security settings</p>
-      {/* ### change mockData to householdData when endpoint is done */}
-      <Tabs data={mockData} />
+      <Tabs data={household} />
     </>
   );
 };

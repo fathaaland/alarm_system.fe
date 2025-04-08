@@ -2,7 +2,11 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useToast, useUserStore } from "../../../providers";
+import { useMutation } from "@tanstack/react-query";
+import { User } from "../../assets";
 
 const schema = z.object({
   email: z.string().email().max(50),
@@ -12,6 +16,11 @@ const schema = z.object({
 type FormFields = z.infer<typeof schema>;
 
 export const LoginForm: React.FC = () => {
+  const { updateUserData, updateAccessToken, updateRefreshToken } =
+    useUserStore();
+  const navigate = useNavigate();
+  const toast = useToast();
+
   const {
     register,
     handleSubmit,
@@ -21,25 +30,46 @@ export const LoginForm: React.FC = () => {
     resolver: zodResolver(schema),
   });
 
-  // form submit function
-  const onSubmit: SubmitHandler<FormFields> = async (data) => {
-    // send post request to BE
-    try {
-      // simulated call ###
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log(data);
-    } catch (error) {
-      // simulated error ###
+  interface OutputData {
+    accessToken: string;
+    refreshToken: string;
+    user: User;
+  }
+
+  // get user and tokens
+  const mutation = useMutation({
+    mutationFn: async (formData: FormFields) => {
+      const { data } = await axios.post<OutputData>(
+        "http://localhost:3000/auth/login",
+        formData
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      updateAccessToken(data.accessToken);
+      updateRefreshToken(data.refreshToken);
+      updateUserData(data.user);
+
+      // redirect to homepage
+      toast?.open("Login was successful");
+      navigate("/homepage");
+    },
+    onError: (error: any) => {
       setError("root", {
-        message: "This email is already taken",
+        message: error.response?.data?.message || "Login failed",
+        // ### implement modal with error
       });
-    }
+    },
+  });
+
+  // form submit function
+  const onSubmit: SubmitHandler<FormFields> = async (formData) => {
+    mutation.mutate(formData);
   };
 
   return (
     <>
-      {" "}
-      // submit form for login
+      {/* submit form for login */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div>
           {/* tittle and text for login page */}

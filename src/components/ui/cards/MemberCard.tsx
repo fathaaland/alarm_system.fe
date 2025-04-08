@@ -30,7 +30,7 @@ export const MemberCard: React.FC<MemberCradProps> = ({ member, role }) => {
       </div>
 
       {/* confirm remove member modal */}
-      <ModalWindow open={isOpen} onClose={() => setIsOpen(false)}>
+      <ModalWindow open={isOpen} onClose={() => setIsOpen(false)} type="danger">
         <h4>Remove {member?.firstName} from household</h4>
         <p>Are you sure? This action cannot be undone</p>
         {/* remove button only for admin */}

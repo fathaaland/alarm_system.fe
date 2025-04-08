@@ -24,9 +24,10 @@ export const HouseholdCard: React.FC<HouseholdCardProps> = ({ household }) => {
       </p>
       {/* household alarm active info */}
       <Dot />
-      <p>{household.active ? "Alarm Activated" : "Alarm Deactivated"}</p>
+
+      {/* ### <p>{household.active ? "Alarm Activated" : "Alarm Deactivated"}</p> */}
       {/* household link to detail */}
-      <Link to={`/household-detail/${household.id}`}>
+      <Link to={`/household-detail/${household._id}`}>
         <div>
           <p>Click to view details</p>
         </div>

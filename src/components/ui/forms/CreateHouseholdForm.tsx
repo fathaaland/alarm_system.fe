@@ -2,6 +2,8 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
+import { useFetchData, useToast } from "../../../providers";
+import { useQueryClient } from "@tanstack/react-query";
 
 const schema = z.object({
   name: z.string().min(3).max(50),
@@ -9,9 +11,13 @@ const schema = z.object({
 
 type FormFields = z.infer<typeof schema>;
 
-export const CreateHouseholdForm: React.FC<{ onCancel: () => void }> = ({
-  onCancel,
-}) => {
+interface DtoOut {
+  success: boolean;
+}
+
+export const CreateHouseholdForm: React.FC<{
+  onCancel: () => void;
+}> = ({ onCancel }) => {
   const {
     register,
     handleSubmit,
@@ -21,18 +27,28 @@ export const CreateHouseholdForm: React.FC<{ onCancel: () => void }> = ({
     resolver: zodResolver(schema),
   });
 
+  const { postData } = useFetchData();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const createHouseholdMutation = postData<DtoOut, FormFields>(
+    "/household/create"
+  );
+
   // form submit function
-  const onSubmit: SubmitHandler<FormFields> = async (data) => {
-    // send post request to BE
+  const onSubmit: SubmitHandler<FormFields> = async (inputData) => {
     try {
-      // simulated call ###
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log(data);
-      /* onCancel(); ### if response 200 close modal and display toast*/
+      const response = await createHouseholdMutation.mutateAsync(inputData);
+
+      if (response.success) {
+        onCancel();
+        toast?.open("Household was created successfully");
+        queryClient.invalidateQueries({ queryKey: ["households"] });
+        // ### refresh homepage after creating household
+      }
     } catch (error) {
-      // simulated error ###
       setError("root", {
-        message: "Household fucked",
+        message: "Error creating household. Please try again.",
       });
     }
   };

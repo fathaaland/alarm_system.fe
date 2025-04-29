@@ -16,7 +16,6 @@ export const PageWrapper: React.FC = () => {
       {/* Page layout for every page */}
       <PageLayout>
         <Outlet />
-        {/* <Login /> */}
       </PageLayout>
     </>
   );

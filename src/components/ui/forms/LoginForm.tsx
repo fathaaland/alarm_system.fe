@@ -26,22 +26,10 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
 const FormSchema = z.object({
-  email: z
-    .string()
-    .email({
-      message: "Email must be a valid address.",
-    })
-    .max(50, {
-      message: "Email must be maximum 50 characters.",
-    }),
-  password: z
-    .string()
-    .min(8, {
-      message: "Password must contain at least 8 characters.",
-    })
-    .max(30, {
-      message: "Password must be maximum 30 characters.",
-    }),
+  email: z.string().email({
+    message: "Email must be a valid address.",
+  }),
+  password: z.string(),
 });
 
 export const LoginForm: React.FC = () => {

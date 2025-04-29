@@ -1,45 +1,78 @@
 import * as React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { z } from "zod";
+
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { useToast, useUserStore } from "../../../providers";
-import { useMutation } from "@tanstack/react-query";
 import { User } from "../../assets";
 
-const schema = z.object({
-  email: z.string().email().max(50),
-  password: z.string().min(8).max(30),
+import { Input } from "../input";
+import { Button } from "../button";
+import { toast } from "sonner";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../form";
+import { Eye, EyeOff } from "lucide-react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+import { useUserStore } from "../../../providers";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+
+const FormSchema = z.object({
+  email: z
+    .string()
+    .email({
+      message: "Email must be a valid address.",
+    })
+    .max(50, {
+      message: "Email must be maximum 50 characters.",
+    }),
+  password: z
+    .string()
+    .min(8, {
+      message: "Password must contain at least 8 characters.",
+    })
+    .max(30, {
+      message: "Password must be maximum 30 characters.",
+    }),
 });
 
-type FormFields = z.infer<typeof schema>;
-
 export const LoginForm: React.FC = () => {
+  const [showPassword, setShowPassword] = React.useState(false);
   const { updateUserData, updateAccessToken, updateRefreshToken } =
     useUserStore();
   const navigate = useNavigate();
-  const toast = useToast();
 
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<FormFields>({
-    resolver: zodResolver(schema),
+  type FormFields = z.infer<typeof FormSchema>;
+
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
-
-  interface OutputData {
+  //### correct the output
+  interface DtoOut {
     accessToken: string;
     refreshToken: string;
     user: User;
   }
 
-  // get user and tokens
-  const mutation = useMutation({
+  const {
+    mutate: loginMutation,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: async (formData: FormFields) => {
-      const { data } = await axios.post<OutputData>(
+      const { data } = await axios.post<DtoOut>(
         "http://localhost:3000/auth/login",
         formData
       );
@@ -50,70 +83,93 @@ export const LoginForm: React.FC = () => {
       updateRefreshToken(data.refreshToken);
       updateUserData(data.user);
 
-      // redirect to homepage
-      toast?.open("Login was successful");
       navigate("/homepage");
+
+      toast.success("Login successful", {
+        description: "You have been logged in successfully",
+      });
     },
     onError: (error: any) => {
-      setError("root", {
-        message: error.response?.data?.message || "Login failed",
-        // ### implement modal with error
+      toast.error("Login failed", {
+        description:
+          error.response?.data?.message || "An error occurred during login",
       });
     },
   });
 
-  // form submit function
-  const onSubmit: SubmitHandler<FormFields> = async (formData) => {
-    mutation.mutate(formData);
-  };
+  function onSubmit(data: FormFields) {
+    loginMutation(data);
+  }
 
   return (
-    <>
-      {/* submit form for login */}
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div>
-          {/* tittle and text for login page */}
-          <h1>Login</h1>
-          <p>Enter your credentials to access your account</p>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+        <h1 className="text-2xl font-bold mb-2">Login</h1>
+        <p className="text-gray-600 mb-6">
+          Enter your credentials to access your account
+        </p>
 
-          {/* input for email */}
-          <label>Email:</label>
-          <input
-            {...register("email")}
-            type="email"
-            name="email"
-            id="email"
-            placeholder="Email"
-          />
-          {/* error message for email input */}
-          {errors.email && <div>{errors.email.message}</div>}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email:</FormLabel>
+              <FormControl>
+                <Input placeholder="example@mail.com" type="email" {...field} />
+              </FormControl>
+              <FormDescription>Enter your email address.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          {/* input for password */}
-          <label>Password:</label>
-          <input
-            {...register("password")}
-            type="password"
-            name="password"
-            id="password"
-            placeholder="Password"
-          />
-          {/* error message for password input */}
-          {errors.password && <div>{errors.password.message}</div>}
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password:</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    placeholder="password"
+                    type={showPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </FormControl>
+              <FormDescription>Enter your password.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          {/* error message from BE */}
-          {errors.root && <div>{errors.root.message}</div>}
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending ? "Loading..." : "Login"}
+        </Button>
 
-          {/* submit form button */}
-          <button disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Loading..." : "Login"}
-          </button>
-
-          {/* link to register */}
-          <p>
-            Don't have an account? <Link to="/register">Register</Link>
-          </p>
-        </div>
+        <p className="text-center text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="font-medium text-primary hover:underline"
+          >
+            Register
+          </Link>
+        </p>
       </form>
-    </>
+    </Form>
   );
 };

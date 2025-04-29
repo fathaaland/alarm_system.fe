@@ -2,8 +2,19 @@ export interface Household {
   _id: string;
   name: string;
   ownerId: string;
-  members: string[];
-  devices: string[];
+  members: User[];
+  devices: Device[];
+  logs: Log[];
+  createdAt: Date;
+  __v: number;
+}
+
+export interface HouseholdWithOwner {
+  _id: string;
+  name: string;
+  ownerId: User;
+  members: User[];
+  devices: Device[];
   logs: Log[];
   createdAt: Date;
   __v: number;
@@ -35,5 +46,3 @@ export interface Log {
   message: string;
   time: Date;
 }
-
-// ### id to _id

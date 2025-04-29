@@ -1,11 +1,12 @@
 import * as React from "react";
 import { ReactNode } from "react";
-import { ToastProvider } from "../components/ui";
+import { Toaster } from "sonner";
 
 export const Providers: React.FC<{ children?: ReactNode }> = ({ children }) => {
   return (
     <>
-      <ToastProvider>{children}</ToastProvider>
+      {children}
+      <Toaster />
     </>
   );
 };

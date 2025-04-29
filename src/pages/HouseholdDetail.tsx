@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Skeleton } from "../components/ui/skeleton";
 import { SettingsTab } from "../components/ui/tabs/SettingsTab";
 import { DevicesTab } from "../components/ui/tabs/DevicesTab";
 import { MembersTab } from "../components/ui/tabs/MembersTab";

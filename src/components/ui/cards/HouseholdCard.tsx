@@ -1,39 +1,64 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Dot } from "lucide-react";
+import { AlertCircle, ArrowRight, Dot, Shield, Users } from "lucide-react";
 import { Household } from "../../assets";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../card";
 
 interface HouseholdCardProps {
   household: Household;
 }
 
 export const HouseholdCard: React.FC<HouseholdCardProps> = ({ household }) => {
-  return (
-    <div>
-      {/* household name */}
-      <h2>{household.name}</h2>
-      {/* household number of devices and members */}
-      <p>
-        {household.devices.length}{" "}
-        {household.devices.length === 1 ? "device" : "devices"}
-      </p>
-      <Dot />
-      <p>
-        {household.members.length}{" "}
-        {household.members.length === 1 ? "member" : "members"}
-      </p>
-      {/* household alarm active info */}
-      <Dot />
+  const hasTriggeredDevice = household.devices.some(
+    (device) => (device.alarm_triggered === 1)
+  );
 
-      {/* ### <p>{household.active ? "Alarm Activated" : "Alarm Deactivated"}</p> */}
-      {/* household link to detail */}
-      <Link to={`/household-detail/${household._id}`}>
-        <div>
-          <p>Click to view details</p>
-        </div>
-      </Link>
-    </div>
+  return (
+    <Link
+      to={`/household-detail/${household._id}`}
+      className="block transition-transform hover:scale-102"
+    >
+      <Card
+        className={`overflow-hidden border-2 ${
+          hasTriggeredDevice ? "border-red-500" : "border-gray-200"
+        } bg-white shadow-sm hover:shadow-md`}
+      >
+        {hasTriggeredDevice && (
+          <div className="bg-red-500 text-white text-xs font-medium py-1 px-3 text-center">
+            Alarm triggered
+          </div>
+        )}
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>{household.name}</span>
+            {hasTriggeredDevice && (
+              <AlertCircle className="h-5 w-5 text-red-500" />
+            )}
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center">
+            <Shield className="h-4 w-4 mr-1" />
+            <span>
+              {household.devices.length}{" "}
+              {household.devices.length === 1 ? "device" : "devices"}
+            </span>
+          </div>
+          <Dot className="text-gray-400" />
+          <div className="flex items-center">
+            <Users className="h-4 w-4 mr-1" />
+            <span>
+              {household.members.length}{" "}
+              {household.members.length === 1 ? "member" : "members"}
+            </span>
+          </div>
+        </CardContent>
+
+        <CardFooter className="bg-gray-50 text-sm text-gray-500 flex justify-center items-center py-2">
+          <ArrowRight className="h-4 w-4 mr-1" /> View details
+        </CardFooter>
+      </Card>
+    </Link>
   );
 };
-
-// ### fix conditional rendering with plural devices and members

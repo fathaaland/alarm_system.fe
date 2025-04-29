@@ -1,119 +1,249 @@
 import * as React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { z } from "zod";
-import { Link } from "react-router-dom";
 
-const schema = z.object({
-  firstName: z.string().min(3).max(50),
-  lastName: z.string().min(3).max(50),
-  email: z.string().email(),
-  password: z.string().min(8).max(30),
-  confirmPassword: z.string().min(8).max(30),
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+
+import { Input } from "../input";
+import { Button } from "../button";
+import { toast } from "sonner";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../form";
+import { Eye, EyeOff } from "lucide-react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+const FormSchema = z.object({
+  firstName: z
+    .string()
+    .min(3, {
+      message: "First name must be at least 3 characters.",
+    })
+    .max(20, {
+      message: "First name must be maximum 20 characters.",
+    }),
+  lastName: z
+    .string()
+    .min(3, {
+      message: "Last name must be at least 3 characters.",
+    })
+    .max(20, {
+      message: "Last name must be maximum 20 characters.",
+    }),
+  email: z
+    .string()
+    .email({
+      message: "Email must be a valid address.",
+    })
+    .max(50, {
+      message: "Email must be maximum 50 characters.",
+    }),
+  password: z
+    .string()
+    .min(8, {
+      message: "Password must contain at least 8 characters.",
+    })
+    .max(30, {
+      message: "Password must be maximum 30 characters.",
+    }),
+  confirmPassword: z
+    .string()
+    .min(8, {
+      message: "Password must contain at least 8 characters.",
+    })
+    .max(30, {
+      message: "Password must be maximum 30 characters.",
+    }),
 });
 
-type FormFields = z.infer<typeof schema>;
-
 export const RegisterForm: React.FC = () => {
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<FormFields>({
-    resolver: zodResolver(schema),
+  const [showPassword, setShowPassword] = React.useState(false);
+  const navigate = useNavigate();
+
+  type FormFields = z.infer<typeof FormSchema>;
+
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+  //### correct the output
+  interface DtoOut {
+    success: boolean;
+  }
+
+  const { mutate: registrationMutation, isPending } = useMutation({
+    mutationFn: async (formData: FormFields) => {
+      const { data } = await axios.post<DtoOut>(
+        "http://localhost:3000/auth/register",
+        formData
+      );
+      return data;
+    },
+    onSuccess: () => {
+      navigate("/login");
+
+      toast.success("Registration successful", {
+        description: "Your account has been registred successfully",
+      });
+    },
+    onError: (error: any) => {
+      //### doesnt include unsuccessful requests
+      toast.error("Registration failed", {
+        description:
+          error.response?.data?.message ||
+          "An error occurred during registration",
+      });
+    },
   });
 
-  // form submit function
-  const onSubmit: SubmitHandler<FormFields> = async (data) => {
-    // send post request to BE
-    try {
-      // simulated call ###
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log(data);
-    } catch (error) {
-      // simulated error ###
-      setError("root", {
-        message: "This email is already taken",
-      });
-    }
-  };
+  function onSubmit(data: FormFields) {
+    registrationMutation(data);
+  }
 
   return (
-    <>
-      // submit form for register
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div>
-          {/* tittle and text for register page */}
-          <h1>Create an account</h1>
-          <p>Enter your information to create an account</p>
-          {/* input for first name */}
-          <label>First Name:</label>
-          <input
-            {...register("firstName")}
-            type="text"
-            name="firstName"
-            id="firstName"
-            placeholder="First Name"
-          />
-          {/* error message for first name input */}
-          {errors.email && <div>{errors.email.message}</div>}
-          {/* input for last name */}
-          <label>Last Name:</label>
-          <input
-            {...register("lastName")}
-            type="text"
-            name="lastName"
-            id="lastName"
-            placeholder="Last Name"
-          />
-          {/* error message for last name input */}
-          {errors.email && <div>{errors.email.message}</div>}
-          {/* input for email */}
-          <label>Email:</label>
-          <input
-            {...register("email")}
-            type="text"
-            name="email"
-            id="email"
-            placeholder="Email"
-          />
-          {/* error message for email input */}
-          {errors.email && <div>{errors.email.message}</div>}
-          {/* input for password */}
-          <label>Password:</label>
-          <input
-            {...register("password")}
-            type="password"
-            name="password"
-            id="password"
-            placeholder="Password"
-          />
-          {/* error message for password input */}
-          {errors.password && <div>{errors.password.message}</div>}
-          {/* input for confirm password */}
-          <label>Confirm Password:</label>
-          <input
-            {...register("confirmPassword")}
-            type="password"
-            name="confirmPassword"
-            id="confirmPassword"
-            placeholder="Password"
-          />
-          {/* error message for password input */}
-          {errors.password && <div>{errors.password.message}</div>}
-          {/* submit form button */}
-          <button disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Loading..." : "Register"}
-          </button>
-          {/* error message from BE */}
-          {errors.root && <div>{errors.root.message}</div>}
-          {/* link to login */}
-          <p>
-            Already have an account? <Link to="/login">Login</Link>
-          </p>
-        </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+        <h1 className="text-2xl font-bold mb-2">Create an account</h1>
+        <p className="text-gray-600 mb-6">
+          Enter your information to create an account
+        </p>
+
+        <FormField
+          control={form.control}
+          name="firstName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>First name:</FormLabel>
+              <FormControl>
+                <Input placeholder="John" {...field} />
+              </FormControl>
+              <FormDescription>Enter your first name.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="lastName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Last name:</FormLabel>
+              <FormControl>
+                <Input placeholder="Harris" {...field} />
+              </FormControl>
+              <FormDescription>Enter your last name.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email:</FormLabel>
+              <FormControl>
+                <Input placeholder="example@mail.com" type="email" {...field} />
+              </FormControl>
+              <FormDescription>Enter your email address.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password:</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    placeholder="password"
+                    type={showPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </FormControl>
+              <FormDescription>Enter your password.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm Password:</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    placeholder="password"
+                    type={showPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </FormControl>
+              <FormDescription>
+                Enter your password for confirmation.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending ? "Loading..." : "Register"}
+        </Button>
+
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-primary hover:underline"
+          >
+            Login
+          </Link>
+        </p>
       </form>
-    </>
+    </Form>
   );
 };

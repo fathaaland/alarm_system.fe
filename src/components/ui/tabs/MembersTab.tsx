@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CirclePlus, Search, Users } from "lucide-react";
-import { Household, HouseholdWithOwner, User } from "../../assets";
+import { HouseholdWithOwner, User } from "../../assets";
 import { AddMemberCard, MemberCard } from "../cards";
 import { Button } from "../button";
 import {
@@ -16,7 +16,7 @@ import { Input } from "../input";
 import { useUserStore } from "../../../providers";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Skeleton } from "../Skeleton";
+import { Skeleton } from "../skeleton";
 
 interface MembersTabProps {
   isOwner?: boolean;
@@ -51,7 +51,7 @@ export const MembersTab: React.FC<MembersTabProps> = ({
       );
       return data;
     },
-    enabled: false, // Don't fetch on component mount
+    enabled: false,
     retry: 2,
   });
 
@@ -59,26 +59,19 @@ export const MembersTab: React.FC<MembersTabProps> = ({
     if (!data?.data) return [];
 
     return data.data.filter((user: User) => {
-      const userId = user._id.toString();
-      const ownerId = household?.ownerId._id?.toString();
-
-      if (ownerId && userId === ownerId) {
-        return false;
-      }
-      const isMember =
-        household?.members?.some(
-          (member) => member?._id?.toString() === userId
-        ) ?? false;
-      if (isMember) {
-        return false;
-      }
-      if (!searchQuery.trim()) {
-        return true;
-      }
-      const searchTerm = searchQuery.toLowerCase();
-      const matchesSearch = [user.firstName, user.lastName, user.email].some(
-        (field) => field?.toLowerCase().includes(searchTerm)
+      const isMember = household?.members?.some(
+        (member) => member._id.toString() === user._id.toString()
       );
+
+      const isOwner =
+        household?.ownerId._id?.toString() === user._id.toString();
+
+      if (isMember || isOwner) return false;
+
+      const matchesSearch =
+        user.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
       return matchesSearch;
     });
@@ -87,6 +80,7 @@ export const MembersTab: React.FC<MembersTabProps> = ({
   const handleSearch = (e: any) => {
     e.preventDefault();
     setIsSearched(true);
+    refetch();
   };
 
   return (

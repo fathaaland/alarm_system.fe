@@ -5,7 +5,7 @@ import { HouseholdCard } from "../components/ui/cards";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useUserStore } from "../providers";
-import { Skeleton } from "../components/ui/Skeleton";
+import { Skeleton } from "../components/ui/skeleton";
 import { AlertCircle, HomeIcon, PlusIcon } from "lucide-react";
 import { Button } from "../components/ui/button";
 

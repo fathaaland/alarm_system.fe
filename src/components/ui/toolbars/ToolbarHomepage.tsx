@@ -59,6 +59,7 @@ export const ToolbarHomepage: React.FC = () => {
     data: Household[];
   }
 
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
   const BEARER_TOKEN = useUserStore((state) => state.accessToken);
   const {
     mutate: createHouseholdMutation,
@@ -67,7 +68,7 @@ export const ToolbarHomepage: React.FC = () => {
   } = useMutation({
     mutationFn: async (formData: FormFields) => {
       const { data } = await axios.post<DtoOut>(
-        "http://localhost:3000/household/create",
+        `${GATEWAY}/household/create`,
         formData,
         {
           headers: {

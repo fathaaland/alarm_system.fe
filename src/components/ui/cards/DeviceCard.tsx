@@ -24,12 +24,14 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
   return (
     <Card
       className={`overflow-hidden ${
-        device && device?.alarm_triggered > 0 ? "border-red-500" : ""
+        device && device?.alarm_triggered > 0 && device?.active === true
+          ? "border-red-500"
+          : ""
       }`}
     >
-      {device && device?.alarm_triggered > 0 && (
+      {device && device?.alarm_triggered > 0 && device?.active === true && (
         <div className="bg-red-500 text-white text-sm font-medium py-1 px-3 text-center">
-          Alert Triggered
+          Alarm Triggered
         </div>
       )}
 
@@ -77,10 +79,16 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
             </Badge>
           </div>
 
-          {device && device?.alarm_triggered > 0 && (
+          {device && device?.alarm_triggered > 0 && device?.active === true && (
             <div className="flex items-center text-red-500">
               <AlertCircle className="h-4 w-4 mr-1" />
-              <span>{device?.alarm_triggered ? "Security alert" : null}</span>
+              <span>
+                {device &&
+                device?.alarm_triggered > 0 &&
+                device?.active === true
+                  ? "Security alert"
+                  : null}
+              </span>
             </div>
           )}
         </div>

@@ -9,8 +9,8 @@ interface HouseholdCardProps {
 }
 
 export const HouseholdCard: React.FC<HouseholdCardProps> = ({ household }) => {
-  const hasTriggeredDevice = household.devices.some(
-    (device) => (device.alarm_triggered === 1)
+  const alarmpositive = household.devices.some(
+    (device) => device.alarm_triggered === 1 && device.active === true
   );
 
   return (
@@ -20,10 +20,10 @@ export const HouseholdCard: React.FC<HouseholdCardProps> = ({ household }) => {
     >
       <Card
         className={`overflow-hidden border-2 ${
-          hasTriggeredDevice ? "border-red-500" : "border-gray-200"
+          alarmpositive ? "border-red-500" : "border-gray-200"
         } bg-white shadow-sm hover:shadow-md`}
       >
-        {hasTriggeredDevice && (
+        {alarmpositive && (
           <div className="bg-red-500 text-white text-xs font-medium py-1 px-3 text-center">
             Alarm triggered
           </div>
@@ -31,9 +31,7 @@ export const HouseholdCard: React.FC<HouseholdCardProps> = ({ household }) => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{household.name}</span>
-            {hasTriggeredDevice && (
-              <AlertCircle className="h-5 w-5 text-red-500" />
-            )}
+            {alarmpositive && <AlertCircle className="h-5 w-5 text-red-500" />}
           </CardTitle>
         </CardHeader>
 

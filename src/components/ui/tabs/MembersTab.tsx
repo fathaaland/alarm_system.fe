@@ -37,18 +37,16 @@ export const MembersTab: React.FC<MembersTabProps> = ({
   }
 
   //### error handling
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
   const BEARER_TOKEN = useUserStore((state) => state.accessToken);
   const { data, isPending, error, refetch } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data } = await axios.get<DtoOut>(
-        "http://localhost:3000/user/users",
-        {
-          headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
-          },
-        }
-      );
+      const { data } = await axios.get<DtoOut>(`${GATEWAY}/user/users`, {
+        headers: {
+          Authorization: `Bearer ${BEARER_TOKEN}`,
+        },
+      });
       return data;
     },
     enabled: false,
@@ -198,7 +196,13 @@ export const MembersTab: React.FC<MembersTabProps> = ({
 
           <DialogFooter>
             {/* ### reset input */}
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpen(false);
+                setSearchQuery("");
+              }}
+            >
               Cancel
             </Button>
           </DialogFooter>

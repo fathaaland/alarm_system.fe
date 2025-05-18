@@ -79,6 +79,8 @@ export const RegisterForm: React.FC = () => {
     },
   });
   //### correct the output
+
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
   interface DtoOut {
     success: boolean;
   }
@@ -86,7 +88,7 @@ export const RegisterForm: React.FC = () => {
   const { mutate: registrationMutation, isPending } = useMutation({
     mutationFn: async (formData: FormFields) => {
       const { data } = await axios.post<DtoOut>(
-        "http://localhost:3000/auth/register",
+        `${GATEWAY}/auth/register`,
         formData
       );
       return data;
@@ -99,7 +101,6 @@ export const RegisterForm: React.FC = () => {
       });
     },
     onError: (error: any) => {
-      //### doesnt include unsuccessful requests
       toast.error("Registration failed", {
         description:
           error.response?.data?.message ||
@@ -129,7 +130,6 @@ export const RegisterForm: React.FC = () => {
               <FormControl>
                 <Input placeholder="John" {...field} />
               </FormControl>
-              <FormDescription>Enter your first name.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -144,7 +144,6 @@ export const RegisterForm: React.FC = () => {
               <FormControl>
                 <Input placeholder="Harris" {...field} />
               </FormControl>
-              <FormDescription>Enter your last name.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -159,7 +158,6 @@ export const RegisterForm: React.FC = () => {
               <FormControl>
                 <Input placeholder="example@mail.com" type="email" {...field} />
               </FormControl>
-              <FormDescription>Enter your email address.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -191,7 +189,6 @@ export const RegisterForm: React.FC = () => {
                   </button>
                 </div>
               </FormControl>
-              <FormDescription>Enter your password.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -223,9 +220,6 @@ export const RegisterForm: React.FC = () => {
                   </button>
                 </div>
               </FormControl>
-              <FormDescription>
-                Enter your password for confirmation.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

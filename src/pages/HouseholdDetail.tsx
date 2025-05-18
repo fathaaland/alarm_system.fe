@@ -1,8 +1,16 @@
 import * as React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Device, HouseholdWithOwner } from "../components/assets";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, History, Settings, Shield, Users } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  History,
+  Pause,
+  Settings,
+  Shield,
+  Users,
+} from "lucide-react";
 import { Button } from "../components/ui/button";
 import {
   Tabs,
@@ -33,13 +41,7 @@ export const HouseholdDetail: React.FC = () => {
   const [openSettings, setOpenSettings] = React.useState(false);
 
   const { householdId } = useParams<{ householdId: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  if (!householdId) {
-    navigate("/not-found"); // ### make this page
-    return null;
-  }
 
   interface DtoOutGetHousehold {
     success: boolean;
@@ -47,6 +49,7 @@ export const HouseholdDetail: React.FC = () => {
     isOwner: boolean;
   }
 
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
   const BEARER_TOKEN = useUserStore((state) => state.accessToken);
 
   /* fetch household data by id */
@@ -59,7 +62,7 @@ export const HouseholdDetail: React.FC = () => {
     queryKey: ["household", householdId],
     queryFn: async () => {
       const { data } = await axios.get<DtoOutGetHousehold>(
-        `http://localhost:3000/user/whole/${householdId}`,
+        `${GATEWAY}/user/whole/${householdId}`,
         {
           headers: {
             Authorization: `Bearer ${BEARER_TOKEN}`,
@@ -86,18 +89,48 @@ export const HouseholdDetail: React.FC = () => {
     isPending: isPendingDeactivateHousehold,
   } = useMutation<DtoOutDeactivateHousehold, Error, DtoInDeactivateHousehold>({
     mutationFn: async (data: DtoInDeactivateHousehold) => {
-      const response = await axios.put<DtoOutDeactivateHousehold>(
-        "http://localhost:3000/device/set-state-deactive",
-        { householdId: data.deactivateHouseholdId },
-        {
-          headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
-          },
+      return new Promise<DtoOutDeactivateHousehold>((resolve, reject) => {
+        if (!BEARER_TOKEN) {
+          return reject(new Error("Authentication token is missing"));
         }
-      );
-      return response.data;
+        const socket = new WebSocket(`ws://localhost:3000/ws`, [BEARER_TOKEN]);
+
+        socket.onopen = () => {
+          socket.send(
+            JSON.stringify({
+              action: "setStateDeactive",
+              householdId: data.deactivateHouseholdId,
+            })
+          );
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const response = JSON.parse(event.data);
+            socket.close();
+            response.success
+              ? resolve(response)
+              : reject(new Error(response.message));
+          } catch (error) {
+            socket.close();
+            reject(new Error("Invalid response format"));
+          }
+        };
+
+        socket.onerror = () => {
+          reject(new Error("Connection failed. Check if server is running."));
+        };
+
+        setTimeout(() => {
+          if (socket.readyState === WebSocket.CONNECTING) {
+            socket.close();
+            reject(new Error("Connection timeout"));
+          }
+        }, 10000);
+      });
     },
     onSuccess: () => {
+      setOpenAlarmDialog(false);
       queryClient.invalidateQueries({
         queryKey: ["household", householdId],
       });
@@ -121,13 +154,16 @@ export const HouseholdDetail: React.FC = () => {
 
   const triggeredDevices: Device[] = React.useMemo(
     () =>
-      household?.devices.filter((device) => device.alarm_triggered === 1) || [],
+      household?.devices.filter(
+        (device) => device.alarm_triggered === 1 && device.active === true
+      ) || [],
     [household?.devices]
   );
 
   React.useEffect(() => {
     if (triggeredDevices.length > 0 && householdData?.isOwner) {
       setOpenAlarmDialog(true);
+      setOpenSettings(false);
     }
   }, [triggeredDevices]);
 
@@ -168,14 +204,28 @@ export const HouseholdDetail: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-3xl font-bold tracking-tight">{household?.name}</h1>
-        {/* ### add badge indicating if household is active or not */}
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {household?.name}
+          </h1>
+          {isActive ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <span className="w-2 h-2 mr-1.5 rounded-full bg-green-500"></span>
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+              <span className="w-2 h-2 mr-1.5 rounded-full bg-gray-500"></span>
+              Inactive
+            </span>
+          )}
+        </div>
 
         {householdData?.isOwner ? (
           <Button
             variant="outline"
             size="sm"
-            className="text-grey-500 border-grey-200 hover:bg-grey-50 hover:text-grey-600"
+            className="text-gray-500 border-gray-200 hover:bg-gray-50 hover:text-gray-600"
             onClick={() => setOpenSettings(true)}
           >
             <Settings className="h-4 w-4 mr-2" />
@@ -230,8 +280,13 @@ export const HouseholdDetail: React.FC = () => {
       <Dialog open={openAlarmDialog} onOpenChange={setOpenAlarmDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Alarm triggered</DialogTitle>
-            <DialogDescription>beep boop</DialogDescription>
+            <DialogTitle className="text-red-600 flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              Security Alert
+            </DialogTitle>
+            <DialogDescription className="text-gray-700">
+              Alarm triggered at your property. Please verify and respond.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-end">
             <Button
@@ -241,15 +296,18 @@ export const HouseholdDetail: React.FC = () => {
             >
               Cancel
             </Button>
+
             <Button
-              variant="destructive"
+              variant="outline"
               onClick={() =>
                 deactivateHouseholdMutation({
                   deactivateHouseholdId: householdId,
                 })
               }
               disabled={isPendingDeactivateHousehold}
+              className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 flex items-center"
             >
+              <Pause className="h-4 w-4 mr-2" />
               {isPendingDeactivateHousehold ? "Deactivating..." : "Deactivate"}
             </Button>
           </DialogFooter>

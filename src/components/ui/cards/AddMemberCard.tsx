@@ -25,6 +25,7 @@ export const AddMemberCard: React.FC<AddMemberCardProps> = ({
     memberId?: string;
   }
 
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
   const BEARER_TOKEN = useUserStore((state) => state.accessToken);
   const { mutate: addUserMutation, isPending } = useMutation<
     DtoOut,
@@ -33,7 +34,7 @@ export const AddMemberCard: React.FC<AddMemberCardProps> = ({
   >({
     mutationFn: async (data: DtoIn) => {
       const response = await axios.put<DtoOut>(
-        `http://localhost:3000/household/add-user/${householdId}`,
+        `${GATEWAY}/household/add-user/${householdId}`,
         { newUserId: data.memberId },
         {
           headers: {

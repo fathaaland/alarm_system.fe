@@ -7,6 +7,7 @@ import { Button } from "./button";
 import { Avatar, AvatarFallback } from "./avatar";
 import axios from "axios";
 import { toast } from "sonner";
+import { Badge } from "./badge";
 
 export const Navbar: React.FC = () => {
   const user = useUserStore((state) => state.userData);
@@ -15,11 +16,14 @@ export const Navbar: React.FC = () => {
   const { updateUserData, updateAccessToken, updateRefreshToken } =
     useUserStore();
 
+  const role = useUserStore((state) => state.userData?.role);
+
   interface DtoOut {
     success: boolean;
   }
-
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
   const BEARER_TOKEN = useUserStore((state) => state.accessToken);
+  /* user logout */
   const {
     mutate: logoutMutation,
     isPending,
@@ -27,7 +31,7 @@ export const Navbar: React.FC = () => {
   } = useMutation({
     mutationFn: async () => {
       const { data } = await axios.post<DtoOut>(
-        "http://localhost:3000/auth/logout",
+        `${GATEWAY}/auth/logout`,
         {},
         {
           headers: {
@@ -55,11 +59,51 @@ export const Navbar: React.FC = () => {
       });
     },
   });
+
+  /* admin logout */
+  const {
+    mutate: logoutAdminMutation,
+    isPending: isPendingAdminLogout,
+    error: errorAdminLogin,
+  } = useMutation({
+    mutationFn: async () => {
+      const { data } = await axios.post<DtoOut>(
+        `${GATEWAY}/admin/logout`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${BEARER_TOKEN}`,
+          },
+        }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      updateAccessToken(null);
+      updateRefreshToken(null);
+      updateUserData(null);
+
+      navigate("/login");
+      queryClient.clear();
+      toast.success("Logout successful", {
+        description: "You have been logged out successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast.error("Logout failed", {
+        description:
+          error.response?.data?.message || "An error occurred during logout",
+      });
+    },
+  });
+
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm">
       <Link to="/homepage" className="font-bold text-lg text-primary">
-        SafeHouse
+        SafeHome
       </Link>
+      {role === "admin" ? <Badge variant="secondary">Admin</Badge> : null}
+
       <div className="flex items-center gap-3">
         <Avatar className="h-8 w-8">
           <AvatarFallback>
@@ -69,7 +113,13 @@ export const Navbar: React.FC = () => {
         </Avatar>
 
         <Button
-          onClick={() => logoutMutation()}
+          onClick={() =>
+            role === "admin"
+              ? logoutAdminMutation()
+              : role === "user"
+              ? logoutMutation()
+              : null
+          }
           disabled={isPending}
           variant="ghost"
           size="sm"

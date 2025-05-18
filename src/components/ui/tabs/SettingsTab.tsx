@@ -40,6 +40,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const householdId = household?._id;
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
   const BEARER_TOKEN = useUserStore((state) => state.accessToken);
 
   const hasDevices = React.useMemo(
@@ -60,7 +61,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   } = useMutation({
     mutationFn: async () => {
       const { data } = await axios.delete<DtoOutDeleteHousehold>(
-        `http://localhost:3000/household/delete/${householdId}`,
+        `${GATEWAY}/household/delete/${householdId}`,
         {
           headers: {
             Authorization: `Bearer ${BEARER_TOKEN}`,
@@ -100,7 +101,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   } = useMutation<DtoOutUpdateHouseholdName, Error, DtoInUpdateHouseholdName>({
     mutationFn: async (data: DtoInUpdateHouseholdName) => {
       const response = await axios.put<DtoOutUpdateHouseholdName>(
-        `http://localhost:3000/household/update-name/${householdId}`,
+        `${GATEWAY}/household/update-name/${householdId}`,
         { name: data.newName },
         {
           headers: {
@@ -125,9 +126,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     },
   });
 
-  /* activate household */
+  /* activate household with websockets*/
   interface DtoOutActivateHousehold {
     success: boolean;
+    message?: string;
   }
   interface DtoInActivateHousehold {
     activateHouseholdId?: string;
@@ -138,18 +140,48 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     isPending: isPendingActivateHousehold,
   } = useMutation<DtoOutActivateHousehold, Error, DtoInActivateHousehold>({
     mutationFn: async (data: DtoInActivateHousehold) => {
-      const response = await axios.put<DtoOutActivateHousehold>(
-        "http://localhost:3000/device/set-state-active",
-        { householdId: data.activateHouseholdId },
-        {
-          headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
-          },
+      return new Promise<DtoOutActivateHousehold>((resolve, reject) => {
+        if (!BEARER_TOKEN) {
+          return reject(new Error("Authentication token is missing"));
         }
-      );
-      return response.data;
+        const socket = new WebSocket(`ws://localhost:3000/ws`, [BEARER_TOKEN]);
+
+        socket.onopen = () => {
+          socket.send(
+            JSON.stringify({
+              action: "setStateActive",
+              householdId: data.activateHouseholdId,
+            })
+          );
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const response = JSON.parse(event.data);
+            socket.close();
+            response.success
+              ? resolve(response)
+              : reject(new Error(response.message));
+          } catch (error) {
+            socket.close();
+            reject(new Error("Invalid response format"));
+          }
+        };
+
+        socket.onerror = () => {
+          reject(new Error("Connection failed. Check if server is running."));
+        };
+
+        setTimeout(() => {
+          if (socket.readyState === WebSocket.CONNECTING) {
+            socket.close();
+            reject(new Error("Connection timeout"));
+          }
+        }, 10000);
+      });
     },
     onSuccess: () => {
+      setOpenActivateDialog(false);
       queryClient.invalidateQueries({
         queryKey: ["household", householdId],
       });
@@ -160,7 +192,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     onError: (error: Error) => {
       toast.error("State change failed", {
         description:
-          (error as any).response?.data?.message ||
+          error.message ||
           `An error occurred while changing the state of your household.`,
       });
     },
@@ -179,18 +211,48 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     isPending: isPendingDeactivateHousehold,
   } = useMutation<DtoOutDeactivateHousehold, Error, DtoInDeactivateHousehold>({
     mutationFn: async (data: DtoInDeactivateHousehold) => {
-      const response = await axios.put<DtoOutDeactivateHousehold>(
-        "http://localhost:3000/device/set-state-deactive",
-        { householdId: data.deactivateHouseholdId },
-        {
-          headers: {
-            Authorization: `Bearer ${BEARER_TOKEN}`,
-          },
+      return new Promise<DtoOutDeactivateHousehold>((resolve, reject) => {
+        if (!BEARER_TOKEN) {
+          return reject(new Error("Authentication token is missing"));
         }
-      );
-      return response.data;
+        const socket = new WebSocket(`ws://localhost:3000/ws`, [BEARER_TOKEN]);
+
+        socket.onopen = () => {
+          socket.send(
+            JSON.stringify({
+              action: "setStateDeactive",
+              householdId: data.deactivateHouseholdId,
+            })
+          );
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const response = JSON.parse(event.data);
+            socket.close();
+            response.success
+              ? resolve(response)
+              : reject(new Error(response.message));
+          } catch (error) {
+            socket.close();
+            reject(new Error("Invalid response format"));
+          }
+        };
+
+        socket.onerror = () => {
+          reject(new Error("Connection failed. Check if server is running."));
+        };
+
+        setTimeout(() => {
+          if (socket.readyState === WebSocket.CONNECTING) {
+            socket.close();
+            reject(new Error("Connection timeout"));
+          }
+        }, 10000);
+      });
     },
     onSuccess: () => {
+      setOpenActivateDialog(false);
       queryClient.invalidateQueries({
         queryKey: ["household", householdId],
       });
@@ -353,32 +415,36 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             >
               Cancel
             </Button>
+
             {isActive ? (
               <Button
+                variant="outline"
                 onClick={() =>
                   deactivateHouseholdMutation({
                     deactivateHouseholdId: householdId,
                   })
                 }
                 disabled={isPendingDeactivateHousehold}
-                className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 flex items-center"
               >
+                <Pause className="h-4 w-4 mr-2" />
                 {isPendingDeactivateHousehold
                   ? "Deactivating..."
                   : "Deactivate"}
               </Button>
             ) : (
               <Button
-                // create green shceme instead of variant destructive
-                variant="destructive"
+                variant="outline"
                 onClick={() =>
                   activateHouseholdMutation({
                     activateHouseholdId: householdId,
                   })
                 }
                 disabled={isPendingActivateHousehold}
+                className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 flex items-center"
               >
-                {isPendingDeleteHousehold ? "Activating..." : "Activate"}
+                <Play className="h-4 w-4 mr-2" />
+                {isPendingActivateHousehold ? "Activating..." : "Activate"}
               </Button>
             )}
           </DialogFooter>

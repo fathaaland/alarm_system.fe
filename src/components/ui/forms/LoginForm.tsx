@@ -48,6 +48,9 @@ export const LoginForm: React.FC = () => {
     },
   });
   //### correct the output
+
+  const GATEWAY = import.meta.env.VITE_GATEWAY;
+  /* user login */
   interface DtoOut {
     accessToken: string;
     refreshToken: string;
@@ -61,7 +64,7 @@ export const LoginForm: React.FC = () => {
   } = useMutation({
     mutationFn: async (formData: FormFields) => {
       const { data } = await axios.post<DtoOut>(
-        "http://localhost:3000/auth/login",
+        `${GATEWAY}/auth/login`,
         formData
       );
       return data;
@@ -85,8 +88,48 @@ export const LoginForm: React.FC = () => {
     },
   });
 
+  /* admin login */
+  interface DtoOut {
+    accessToken: string;
+    refreshToken: string;
+    admin: User;
+  }
+
+  const {
+    mutate: loginAdminMutation,
+    isPending: isPendingAdminLogin,
+    error: errorAdminLogin,
+  } = useMutation({
+    mutationFn: async (formData: FormFields) => {
+      const { data } = await axios.post<DtoOut>(
+        `${GATEWAY}/admin/login`,
+        formData
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      updateAccessToken(data.accessToken);
+      updateRefreshToken(data.refreshToken);
+      updateUserData(data.admin);
+
+      navigate("/homepage");
+
+      toast.success("Admin login successful", {
+        description: "You have been logged in successfully as admin",
+      });
+    },
+    onError: (error: any) => {
+      toast.error("Admin login failed", {
+        description:
+          error.response?.data?.message || "An error occurred during login",
+      });
+    },
+  });
+
   function onSubmit(data: FormFields) {
-    loginMutation(data);
+    if (data.email === "admin@admin.cz") {
+      loginAdminMutation(data);
+    } else loginMutation(data);
   }
 
   return (
@@ -106,7 +149,6 @@ export const LoginForm: React.FC = () => {
               <FormControl>
                 <Input placeholder="example@mail.com" type="email" {...field} />
               </FormControl>
-              <FormDescription>Enter your email address.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -138,7 +180,6 @@ export const LoginForm: React.FC = () => {
                   </button>
                 </div>
               </FormControl>
-              <FormDescription>Enter your password.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
